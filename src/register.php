@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Validar dominio del correo electrónico
     if (!preg_match('/@ut-tijuana\.edu\.mx$/', $email)) {
-        $message = 'El correo electrónico debe tener el dominio @ut-tijuana.edu.mx.';
+        $message = 'El correo debe de ser institucional @ut-tijuana.edu.mx.';
     } else {
         // Verificar si el correo electrónico ya existe
         $sql = "SELECT * FROM usuarios WHERE email = ?";
