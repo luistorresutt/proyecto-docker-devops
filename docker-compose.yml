@@ -44,7 +44,6 @@ services:
 
   uptime-kuma:
     image: louislam/uptime-kuma:1
-    container_name: uptime_kuma
     restart: always
     ports:
       - "3001:3001"
@@ -55,7 +54,6 @@ services:
 
   dozzle:
     image: amir20/dozzle:latest
-    container_name: dozzle_logs
     restart: always
     ports:
       - "9999:8080"
