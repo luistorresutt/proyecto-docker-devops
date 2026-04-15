@@ -12,11 +12,11 @@ $deptoId = $_SESSION['DepartmentID'];
 $errores = [];
 
 $sqlProjects = "SELECT p.*, pr.Name as Prioridad, s.Name as Estado, d.Name as DepartamentoPropietario,
-                (SELECT COUNT(*) FROM ProjectStages WHERE ProjectId = p.Id) as TotalEtapas
-                FROM Projects p
-                JOIN Priorities pr ON p.PriorityId = pr.Id
-                JOIN Statuses s ON p.StatusId = s.Id
-                JOIN Departments d ON p.PrimaryDepartmentId = d.Id
+                (SELECT COUNT(*) FROM projectstages WHERE ProjectId = p.Id) as TotalEtapas
+                FROM projects p
+                JOIN priorities pr ON p.PriorityId = pr.Id
+                JOIN statuses s ON p.StatusId = s.Id
+                JOIN departments d ON p.PrimaryDepartmentId = d.Id
                 WHERE p.PrimaryDepartmentId != ? AND p.IsDeleted = 0
                 ORDER BY d.Name ASC, p.ProgressPercentage ASC";
 $stmt = $pdo->prepare($sqlProjects);

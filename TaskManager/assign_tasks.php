@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (empty($errores)) {
             try {
-                $sql = "UPDATE Activities SET Name = ?, SpecificActionPlan = ?, ResponsibleId = ?, CommitmentDate = ?, StatusId = 2 WHERE Id = ?";
+                $sql = "UPDATE activities SET Name = ?, SpecificActionPlan = ?, ResponsibleId = ?, CommitmentDate = ?, StatusId = 2 WHERE Id = ?";
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([$newName, $newPlan, $techId, $commitmentDate, $activityId]);
 
@@ -48,12 +48,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (empty($errores)) {
             try {
-                $sql = "UPDATE Activities SET StatusId = 6 WHERE Id = ?";
+                $sql = "UPDATE activities SET StatusId = 6 WHERE Id = ?";
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([$activityId]);
 
                 $commentId = generar_uuid();
-                $sqlComment = "INSERT INTO ActivityComments (Id, ActivityId, UserId, CommentText) VALUES (?, ?, ?, ?)";
+                $sqlComment = "INSERT INTO activitycomments (Id, ActivityId, UserId, CommentText) VALUES (?, ?, ?, ?)";
                 $stmtComment = $pdo->prepare($sqlComment);
                 $stmtComment->execute([$commentId, $activityId, $userId, "SOLICITUD RECHAZADA: " . $rejectReason]);
 
@@ -67,16 +67,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$stmtDept = $pdo->prepare("SELECT Name FROM Departments WHERE Id = ?");
+$stmtDept = $pdo->prepare("SELECT Name FROM departments WHERE Id = ?");
 $stmtDept->execute([$deptoId]);
 $nombreDepartamento = $stmtDept->fetchColumn();
 
 $sqlPending = "
     SELECT a.Id, a.Folio, a.Name, a.SpecificActionPlan, a.CommitmentDate, p.Name as Prioridad, u.FullName as Solicitante, d.Name as DeptoSolicitante, a.RowVersion as CreatedAt
-    FROM Activities a
-    JOIN Priorities p ON a.PriorityId = p.Id
-    JOIN Users u ON a.RequesterId = u.Id
-    JOIN Departments d ON a.RequesterDepartmentId = d.Id
+    FROM activities a
+    JOIN priorities p ON a.PriorityId = p.Id
+    JOIN users u ON a.RequesterId = u.Id
+    JOIN departments d ON a.RequesterDepartmentId = d.Id
     WHERE a.PrimaryDepartmentId = ? AND a.ResponsibleId IS NULL AND a.StatusId = 1
     ORDER BY p.Id DESC, a.RowVersion ASC
 ";
@@ -86,7 +86,7 @@ $pendientes = $stmt->fetchAll();
 
 $sqlTechs = "
     SELECT Id, FullName 
-    FROM Users 
+    FROM users 
     WHERE DepartmentId = ? AND (RoleId = 2 OR Id = ?) AND IsActive = 1
 ";
 $stmt = $pdo->prepare($sqlTechs);

@@ -6,7 +6,7 @@ $passwordPlana = "innovitech2026*";
 $passwordEncriptada = password_hash($passwordPlana, PASSWORD_BCRYPT);
 
 try {
-    $sql = "UPDATE Users SET PasswordHash = ? WHERE PasswordHash IS NULL OR PasswordHash = ''";
+    $sql = "UPDATE users SET PasswordHash = ? WHERE PasswordHash IS NULL OR PasswordHash = ''";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$passwordEncriptada]);
 

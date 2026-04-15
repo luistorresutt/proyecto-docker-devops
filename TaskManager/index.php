@@ -19,9 +19,9 @@ try {
     if ($roleName === 'Tecnico') {
         $sqlTecnico = "
             SELECT a.Id, a.Folio, a.Name as Tarea, p.Name as Prioridad, s.Name as Estado, a.CommitmentDate
-            FROM Activities a
-            JOIN Priorities p ON a.PriorityId = p.Id
-            JOIN Statuses s ON a.StatusId = s.Id
+            FROM activities a
+            JOIN priorities p ON a.PriorityId = p.Id
+            JOIN statuses s ON a.StatusId = s.Id
             WHERE a.ResponsibleId = ? AND s.Name NOT IN ('Finalizado', 'Cancelado')
             ORDER BY a.CommitmentDate ASC, p.Id DESC
             LIMIT 5
@@ -32,22 +32,22 @@ try {
 
     } elseif ($roleName === 'Administrativo') {
         
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM Projects WHERE PrimaryDepartmentId = ? AND StatusId NOT IN (4, 5)"); 
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM projects WHERE PrimaryDepartmentId = ? AND StatusId NOT IN (4, 5)"); 
         $stmt->execute([$deptoId]);
         $datosAdmin['ProyectosActivos'] = $stmt->fetchColumn();
 
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM Activities WHERE PrimaryDepartmentId = ? AND ResponsibleId IS NULL AND StatusId != 5");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM activities WHERE PrimaryDepartmentId = ? AND ResponsibleId IS NULL AND StatusId != 5");
         $stmt->execute([$deptoId]);
         $datosAdmin['PendientesAsignar'] = $stmt->fetchColumn();
 
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM Activities WHERE PrimaryDepartmentId = ? AND CommitmentDate < NOW() AND StatusId NOT IN (4, 5)");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM activities WHERE PrimaryDepartmentId = ? AND CommitmentDate < NOW() AND StatusId NOT IN (4, 5)");
         $stmt->execute([$deptoId]);
         $datosAdmin['TareasAtrasadas'] = $stmt->fetchColumn();
 
         $sqlDistribucion = "
             SELECT COALESCE(tt.Name, 'Sin clasificar') as Tipo, COUNT(a.Id) as Total
-            FROM Activities a
-            LEFT JOIN TaskTypes tt ON a.TaskTypeId = tt.Id
+            FROM activities a
+            LEFT JOIN taskTypes tt ON a.TaskTypeId = tt.Id
             WHERE a.PrimaryDepartmentId = ? AND a.StatusId != 5 AND a.IsDeleted = 0
             GROUP BY tt.Name
         ";
@@ -56,13 +56,13 @@ try {
         $datosAdmin['DistribucionTipos'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     } elseif ($roleName === 'Auditor') {
-        $stmt = $pdo->prepare("SELECT PlantId FROM Departments WHERE Id = ?");
+        $stmt = $pdo->prepare("SELECT PlantId FROM departments WHERE Id = ?");
         $stmt->execute([$deptoId]);
         $plantId = $stmt->fetchColumn();
 
         $stmt = $pdo->prepare("
-            SELECT COUNT(p.Id) FROM Projects p 
-            JOIN Departments d ON p.PrimaryDepartmentId = d.Id 
+            SELECT COUNT(p.Id) FROM projects p 
+            JOIN departments d ON p.PrimaryDepartmentId = d.Id 
             WHERE d.PlantId = ? AND p.IsDeleted = 0
         ");
         $stmt->execute([$plantId]);
@@ -70,9 +70,9 @@ try {
 
         $stmt = $pdo->prepare("
             SELECT s.Name as Estado, COUNT(a.Id) as Total
-            FROM Activities a
-            JOIN Statuses s ON a.StatusId = s.Id
-            JOIN Departments d ON a.PrimaryDepartmentId = d.Id
+            FROM activities a
+            JOIN statuses s ON a.StatusId = s.Id
+            JOIN departments d ON a.PrimaryDepartmentId = d.Id
             WHERE d.PlantId = ? AND a.IsDeleted = 0
             GROUP BY s.Name
         ");
@@ -81,9 +81,9 @@ try {
 
         $sqlDistGlobal = "
             SELECT COALESCE(tt.Name, 'Sin clasificar') as Tipo, COUNT(a.Id) as Total
-            FROM Activities a
-            LEFT JOIN TaskTypes tt ON a.TaskTypeId = tt.Id
-            JOIN Departments d ON a.PrimaryDepartmentId = d.Id
+            FROM activities a
+            LEFT JOIN taskTypes tt ON a.TaskTypeId = tt.Id
+            JOIN departments d ON a.PrimaryDepartmentId = d.Id
             WHERE d.PlantId = ? AND a.StatusId != 5 AND a.IsDeleted = 0
             GROUP BY tt.Name
         ";

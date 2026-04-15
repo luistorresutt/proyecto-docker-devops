@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_shift'])) {
     if (empty($errores)) {
         try {
             $newId = generar_uuid();
-            $sql = "INSERT INTO Shifts (Id, Name, StartTime, EndTime, PatternDescription, IsActive) VALUES (?, ?, ?, ?, ?, 1)";
+            $sql = "INSERT INTO shifts (Id, Name, StartTime, EndTime, PatternDescription, IsActive) VALUES (?, ?, ?, ?, ?, 1)";
             $pdo->prepare($sql)->execute([$newId, $name, $startTime, $endTime, $pattern]);
             
             $_SESSION['SuccessMessage'] = "Turno creado exitosamente.";
@@ -36,8 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_shift'])) {
 }
 
 $sqlShifts = "SELECT s.*, 
-             (SELECT COUNT(*) FROM Users u WHERE u.ShiftId = s.Id AND u.IsActive = 1) as TotalUsers 
-             FROM Shifts s ORDER BY s.StartTime ASC";
+             (SELECT COUNT(*) FROM users u WHERE u.ShiftId = s.Id AND u.IsActive = 1) as TotalUsers 
+             FROM shifts s ORDER BY s.StartTime ASC";
 $turnos = $pdo->query($sqlShifts)->fetchAll();
 
 require 'layout.php';

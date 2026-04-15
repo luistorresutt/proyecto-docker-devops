@@ -14,21 +14,21 @@ $deptoId = $_SESSION['DepartmentID'];
 $errores = [];
 
 function sincronizarProyecto($pdo, $projectId) {
-    $pdo->prepare("UPDATE ProjectStages ps SET 
-        StartDate = (SELECT MIN(StartDate) FROM Activities WHERE StageId = ps.Id AND IsDeleted = 0),
-        CommitmentDate = (SELECT MAX(CommitmentDate) FROM Activities WHERE StageId = ps.Id AND IsDeleted = 0),
-        ProgressPercentage = COALESCE((SELECT CAST(AVG(ProgressPercentage) AS UNSIGNED) FROM Activities WHERE StageId = ps.Id AND IsDeleted = 0), 0)
+    $pdo->prepare("UPDATE projectstages ps SET 
+        StartDate = (SELECT MIN(StartDate) FROM activities WHERE StageId = ps.Id AND IsDeleted = 0),
+        CommitmentDate = (SELECT MAX(CommitmentDate) FROM activities WHERE StageId = ps.Id AND IsDeleted = 0),
+        ProgressPercentage = COALESCE((SELECT CAST(AVG(ProgressPercentage) AS UNSIGNED) FROM activities WHERE StageId = ps.Id AND IsDeleted = 0), 0)
         WHERE ProjectId = ?")->execute([$projectId]);
         
-    $pdo->prepare("UPDATE ProjectStages SET StatusId = CASE WHEN ProgressPercentage = 100 THEN 5 WHEN ProgressPercentage > 0 THEN 3 ELSE 2 END WHERE ProjectId = ?")->execute([$projectId]);
+    $pdo->prepare("UPDATE projectstages SET StatusId = CASE WHEN ProgressPercentage = 100 THEN 5 WHEN ProgressPercentage > 0 THEN 3 ELSE 2 END WHERE ProjectId = ?")->execute([$projectId]);
 
-    $pdo->prepare("UPDATE Projects SET 
-        StartDate = (SELECT MIN(StartDate) FROM ProjectStages WHERE ProjectId = ? AND IsDeleted = 0),
-        CommitmentDate = (SELECT MAX(CommitmentDate) FROM ProjectStages WHERE ProjectId = ? AND IsDeleted = 0),
-        ProgressPercentage = COALESCE((SELECT CAST(AVG(ProgressPercentage) AS UNSIGNED) FROM ProjectStages WHERE ProjectId = ? AND IsDeleted = 0), 0)
+    $pdo->prepare("UPDATE projects SET 
+        StartDate = (SELECT MIN(StartDate) FROM projectstages WHERE ProjectId = ? AND IsDeleted = 0),
+        CommitmentDate = (SELECT MAX(CommitmentDate) FROM projectstages WHERE ProjectId = ? AND IsDeleted = 0),
+        ProgressPercentage = COALESCE((SELECT CAST(AVG(ProgressPercentage) AS UNSIGNED) FROM projectstages WHERE ProjectId = ? AND IsDeleted = 0), 0)
         WHERE Id = ?")->execute([$projectId, $projectId, $projectId, $projectId]);
 
-    $pdo->prepare("UPDATE Projects SET StatusId = CASE WHEN ProgressPercentage = 100 THEN 5 WHEN ProgressPercentage > 0 THEN 3 ELSE 2 END WHERE Id = ?")->execute([$projectId]);
+    $pdo->prepare("UPDATE projects SET StatusId = CASE WHEN ProgressPercentage = 100 THEN 5 WHEN ProgressPercentage > 0 THEN 3 ELSE 2 END WHERE Id = ?")->execute([$projectId]);
 }
 
 if ($projectId) {
@@ -36,10 +36,10 @@ if ($projectId) {
 }
 
 $sqlProject = "SELECT p.*, s.Name as Estado, d.Name as Departamento, pr.Name as Prioridad 
-               FROM Projects p 
-               JOIN Statuses s ON p.StatusId = s.Id
-               JOIN Departments d ON p.PrimaryDepartmentId = d.Id
-               JOIN Priorities pr ON p.PriorityId = pr.Id
+               FROM projects p 
+               JOIN statuses s ON p.StatusId = s.Id
+               JOIN departments d ON p.PrimaryDepartmentId = d.Id
+               JOIN priorities pr ON p.PriorityId = pr.Id
                WHERE p.Id = ? AND p.IsDeleted = 0";
 $stmt = $pdo->prepare($sqlProject);
 $stmt->execute([$projectId]);
@@ -51,7 +51,7 @@ if (!$proyecto) {
     exit;
 }
 
-$stmtCheckLeader = $pdo->prepare("SELECT 1 FROM ProjectLeaders WHERE ProjectId = ? AND UserId = ?");
+$stmtCheckLeader = $pdo->prepare("SELECT 1 FROM projectleaders WHERE ProjectId = ? AND UserId = ?");
 $stmtCheckLeader->execute([$projectId, $userId]);
 $isProjectLeader = $stmtCheckLeader->fetchColumn() ? true : false;
 
@@ -63,13 +63,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isProjectLeader) {
         $desc = trim($_POST['Description']);
         $criteria = trim($_POST['AcceptanceCriteria']);
         
-        $stmtOrder = $pdo->prepare("SELECT COALESCE(MAX(OrderIndex), 0) + 1 FROM ProjectStages WHERE ProjectId = ?");
+        $stmtOrder = $pdo->prepare("SELECT COALESCE(MAX(OrderIndex), 0) + 1 FROM projectstages WHERE ProjectId = ?");
         $stmtOrder->execute([$projectId]);
         $nextOrder = $stmtOrder->fetchColumn();
 
         try {
             $newStageId = generar_uuid();
-            $sqlStage = "INSERT INTO ProjectStages (Id, ProjectId, OrderIndex, Name, Description, AcceptanceCriteria) VALUES (?, ?, ?, ?, ?, ?)";
+            $sqlStage = "INSERT INTO projectstages (Id, ProjectId, OrderIndex, Name, Description, AcceptanceCriteria) VALUES (?, ?, ?, ?, ?, ?)";
             $pdo->prepare($sqlStage)->execute([$newStageId, $projectId, $nextOrder, $name, $desc, $criteria]);
             header("Location: project_dashboard.php?id=" . $projectId);
             exit;
@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isProjectLeader) {
         $criteria = trim($_POST['AcceptanceCriteria']);
 
         try {
-            $sqlUpd = "UPDATE ProjectStages SET Name = ?, Description = ?, AcceptanceCriteria = ? WHERE Id = ? AND ProjectId = ?";
+            $sqlUpd = "UPDATE projectstages SET Name = ?, Description = ?, AcceptanceCriteria = ? WHERE Id = ? AND ProjectId = ?";
             $pdo->prepare($sqlUpd)->execute([$name, $desc, $criteria, $stageId, $projectId]);
             header("Location: project_dashboard.php?id=" . $projectId);
             exit;
@@ -104,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isProjectLeader) {
             $errores[] = "Las fechas de Inicio y Compromiso son obligatorias para el diagrama de Gantt.";
         } else {
             try {
-                $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM Activities WHERE ProjectId = ? AND IsDeleted = 0");
+                $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM activities WHERE ProjectId = ? AND IsDeleted = 0");
                 $stmtCount->execute([$projectId]);
                 $numeroTarea = $stmtCount->fetchColumn() + 1;
                 
@@ -112,8 +112,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isProjectLeader) {
                 $newTaskId = generar_uuid();
                 $folio = 'PRJ-TSK-' . rand(10000, 99999);
                 
-                $sqlTask = "INSERT INTO Activities (Id, Folio, RequesterId, ResponsibleId, PrimaryDepartmentId, RequesterDepartmentId, ProjectId, StageId, DependsOnActivityId, Name, SpecificActionPlan, PriorityId, TaskTypeId, StatusId, StartDate, CommitmentDate) 
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT Id FROM TaskTypes WHERE Name = 'Mejora / Proyecto' LIMIT 1), 2, ?, ?)";
+                $sqlTask = "INSERT INTO activities (Id, Folio, RequesterId, ResponsibleId, PrimaryDepartmentId, RequesterDepartmentId, ProjectId, StageId, DependsOnActivityId, Name, SpecificActionPlan, PriorityId, TaskTypeId, StatusId, StartDate, CommitmentDate) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT Id FROM tasktypes WHERE Name = 'Mejora / Proyecto' LIMIT 1), 2, ?, ?)";
                 
                 $pdo->prepare($sqlTask)->execute([
                     $newTaskId, $folio, $userId, $responsibleId, $proyecto['PrimaryDepartmentId'], $proyecto['PrimaryDepartmentId'], 
@@ -138,10 +138,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isProjectLeader) {
             $errores[] = "Las fechas de Inicio y Compromiso son obligatorias.";
         } else {
             try {
-                $sqlUpd = "UPDATE Activities SET Name = ?, PriorityId = ?, ResponsibleId = ?, StartDate = ?, CommitmentDate = ? WHERE Id = ? AND ProjectId = ?";
+                $sqlUpd = "UPDATE activities SET Name = ?, PriorityId = ?, ResponsibleId = ?, StartDate = ?, CommitmentDate = ? WHERE Id = ? AND ProjectId = ?";
                 $pdo->prepare($sqlUpd)->execute([$name, $priorityId, $responsibleId, $startDate, $commitmentDate, $taskId, $projectId]);
                 
-                $stageId = $pdo->query("SELECT StageId FROM Activities WHERE Id = '$taskId'")->fetchColumn();
+                $stageId = $pdo->query("SELECT StageId FROM activities WHERE Id = '$taskId'")->fetchColumn();
 
                 header("Location: project_dashboard.php?id=" . $projectId);
                 exit;
@@ -152,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isProjectLeader) {
     if (isset($_POST['invite_leader'])) {
         $newLeaderId = $_POST['NewLeaderId'];
         try {
-            $pdo->prepare("INSERT IGNORE INTO ProjectLeaders (ProjectId, UserId) VALUES (?, ?)")->execute([$projectId, $newLeaderId]);
+            $pdo->prepare("INSERT IGNORE INTO projectleaders (ProjectId, UserId) VALUES (?, ?)")->execute([$projectId, $newLeaderId]);
             header("Location: project_dashboard.php?id=" . $projectId);
             exit;
         } catch (Exception $e) { $errores[] = "Error al invitar líder."; }
@@ -164,12 +164,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isProjectLeader) {
 $stmt->execute([$projectId]);
 $proyecto = $stmt->fetch();
 
-$stmtLeaders = $pdo->prepare("SELECT u.Id, u.FullName FROM ProjectLeaders pl JOIN Users u ON pl.UserId = u.Id WHERE pl.ProjectId = ?");
+$stmtLeaders = $pdo->prepare("SELECT u.Id, u.FullName FROM projectleaders pl JOIN users u ON pl.UserId = u.Id WHERE pl.ProjectId = ?");
 $stmtLeaders->execute([$projectId]);
 $lideresObj = $stmtLeaders->fetchAll();
 $lideresNames = array_column($lideresObj, 'FullName');
 
-$stmtAllAdmins = $pdo->prepare("SELECT u.Id, u.FullName, d.Name as Depto FROM Users u JOIN Roles r ON u.RoleId = r.Id JOIN Departments d ON u.DepartmentId = d.Id WHERE r.Name = 'Administrativo' AND u.IsActive = 1 AND u.Id NOT IN (SELECT UserId FROM ProjectLeaders WHERE ProjectId = ?)");
+$stmtAllAdmins = $pdo->prepare("SELECT u.Id, u.FullName, d.Name as Depto FROM users u JOIN roles r ON u.RoleId = r.Id JOIN departments d ON u.DepartmentId = d.Id WHERE r.Name = 'Administrativo' AND u.IsActive = 1 AND u.Id NOT IN (SELECT UserId FROM projectleaders WHERE ProjectId = ?)");
 $stmtAllAdmins->execute([$projectId]);
 $jefesDisponibles = $stmtAllAdmins->fetchAll();
 
@@ -179,11 +179,11 @@ $etapas = $stmtStages->fetchAll();
 
 $stmtTasks = $pdo->prepare("
     SELECT a.*, s.Name as Estado, u.FullName as Responsable, p.Name as Prioridad, dep.Name as DependeDeNombre
-    FROM Activities a
-    JOIN Statuses s ON a.StatusId = s.Id
-    JOIN Priorities p ON a.PriorityId = p.Id
-    LEFT JOIN Users u ON a.ResponsibleId = u.Id
-    LEFT JOIN Activities dep ON a.DependsOnActivityId = dep.Id
+    FROM activities a
+    JOIN statuses s ON a.StatusId = s.Id
+    JOIN priorities p ON a.PriorityId = p.Id
+    LEFT JOIN users u ON a.ResponsibleId = u.Id
+    LEFT JOIN activities dep ON a.DependsOnActivityId = dep.Id
     WHERE a.ProjectId = ? AND a.IsDeleted = 0
     ORDER BY a.StartDate ASC, a.RowVersion ASC
 ");
@@ -195,9 +195,9 @@ foreach ($todasLasTareas as $t) {
     $tareasPorEtapa[$t['StageId']][] = $t;
 }
 
-$prioridades = $pdo->query("SELECT Id, Name FROM Priorities ORDER BY Id")->fetchAll();
+$prioridades = $pdo->query("SELECT Id, Name FROM priorities ORDER BY Id")->fetchAll();
 
-$stmtTechs = $pdo->prepare("SELECT u.Id, u.FullName FROM Users u JOIN Roles r ON u.RoleId = r.Id WHERE u.DepartmentId = ? AND r.Name = 'Tecnico' AND u.IsActive = 1 ORDER BY u.FullName ASC");
+$stmtTechs = $pdo->prepare("SELECT u.Id, u.FullName FROM users u JOIN roles r ON u.RoleId = r.Id WHERE u.DepartmentId = ? AND r.Name = 'Tecnico' AND u.IsActive = 1 ORDER BY u.FullName ASC");
 $stmtTechs->execute([$proyecto['PrimaryDepartmentId']]);
 $tecnicosDisponibles = $stmtTechs->fetchAll();
 

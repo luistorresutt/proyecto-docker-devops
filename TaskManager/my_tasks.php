@@ -12,10 +12,10 @@ $userId = $_SESSION['UserID'];
 $sqlPendientes = "
     SELECT a.Id, a.Folio, a.Name, p.Name as Prioridad, s.Name as Estado, 
            a.CommitmentDate, d.Name as DeptoOrigen
-    FROM Activities a
-    JOIN Priorities p ON a.PriorityId = p.Id
-    JOIN Statuses s ON a.StatusId = s.Id
-    JOIN Departments d ON a.RequesterDepartmentId = d.Id
+    FROM activities a
+    JOIN priorities p ON a.PriorityId = p.Id
+    JOIN statuses s ON a.StatusId = s.Id
+    JOIN departments d ON a.RequesterDepartmentId = d.Id
     WHERE a.ResponsibleId = ? AND s.Name NOT IN ('Finalizado', 'Cancelado')
     ORDER BY p.Id DESC, a.CommitmentDate ASC
 ";
@@ -26,10 +26,10 @@ $tareas = $stmt->fetchAll();
 $sqlHistorial = "
     SELECT a.Id, a.Folio, a.Name, p.Name as Prioridad, s.Name as Estado, 
            a.CommitmentDate, a.CompletedDate, d.Name as DeptoOrigen
-    FROM Activities a
-    JOIN Priorities p ON a.PriorityId = p.Id
-    JOIN Statuses s ON a.StatusId = s.Id
-    JOIN Departments d ON a.RequesterDepartmentId = d.Id
+    FROM activities a
+    JOIN priorities p ON a.PriorityId = p.Id
+    JOIN statuses s ON a.StatusId = s.Id
+    JOIN departments d ON a.RequesterDepartmentId = d.Id
     WHERE a.ResponsibleId = ? AND s.Name IN ('Finalizado', 'Cancelado')
     ORDER BY a.CompletedDate DESC, a.CommitmentDate DESC
     LIMIT 50 -- Límite razonable para no sobrecargar la vista si el técnico tiene años de antigüedad

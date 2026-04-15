@@ -16,7 +16,7 @@ try {
        --------------------------------------------------------- */
     echo "FASE 1: Limpieza de rutinas vencidas...\n";
     
-    $sqlLimpieza = "SELECT Id, Folio FROM Activities 
+    $sqlLimpieza = "SELECT Id, Folio FROM activities 
                     WHERE Folio LIKE 'RUT-%' 
                     AND StatusId = 2 
                     AND DATE(RowVersion) < CURDATE()";
@@ -24,10 +24,10 @@ try {
 
     $canceladas = 0;
     foreach ($vencidas as $v) {
-        $pdo->prepare("UPDATE Activities SET StatusId = 5 WHERE Id = ?")->execute([$v['Id']]);
+        $pdo->prepare("UPDATE activities SET StatusId = 5 WHERE Id = ?")->execute([$v['Id']]);
         
         $commentId = generar_uuid();
-        $pdo->prepare("INSERT INTO ActivityComments (Id, ActivityId, UserId, CommentText) VALUES (?, ?, NULL, ?)")
+        $pdo->prepare("INSERT INTO activitycomments (Id, ActivityId, UserId, CommentText) VALUES (?, ?, NULL, ?)")
             ->execute([$commentId, $v['Id'], "SISTEMA AUTOMÁTICO: Rutina cancelada por caducidad (Posible día inhábil o falta de personal en el turno)."]);
         
         $canceladas++;
@@ -41,14 +41,14 @@ try {
        --------------------------------------------------------- */
     echo "FASE 2: Generación de nuevas rutinas...\n";
 
-    $sqlTemplates = "SELECT * FROM ActivityTemplates WHERE IsActive = 1 AND NextRunDate <= CURDATE()";
+    $sqlTemplates = "SELECT * FROM activityTemplates WHERE IsActive = 1 AND NextRunDate <= CURDATE()";
     $templates = $pdo->query($sqlTemplates)->fetchAll();
 
     $creadas = 0;
     foreach ($templates as $tpl) {
         
-        $sqlBoss = "SELECT u.Id FROM Users u 
-                    JOIN Roles r ON u.RoleId = r.Id 
+        $sqlBoss = "SELECT u.Id FROM users u 
+                    JOIN roles r ON u.RoleId = r.Id 
                     WHERE u.DepartmentId = ? AND r.Name = 'Administrativo' AND u.IsActive = 1 
                     LIMIT 1";
         $stmtBoss = $pdo->prepare($sqlBoss);
@@ -56,14 +56,14 @@ try {
         $jefeId = $stmtBoss->fetchColumn();
 
         if (!$jefeId) {
-            $jefeId = $pdo->query("SELECT u.Id FROM Users u JOIN Roles r ON u.RoleId = r.Id WHERE r.Name = 'Administrativo' LIMIT 1")->fetchColumn();
+            $jefeId = $pdo->query("SELECT u.Id FROM users u JOIN roles r ON u.RoleId = r.Id WHERE r.Name = 'Administrativo' LIMIT 1")->fetchColumn();
         }
 
         $turnosAGenerar = [];
         $opcionTurno = $tpl['TargetShifts'];
 
         if ($opcionTurno === 'Todos los turnos' || $opcionTurno === 'Turnos 1 y 2' || strpos(strtolower($opcionTurno), 'ambos') !== false) {
-            $sqlActiveShifts = "SELECT Name FROM Shifts WHERE IsActive = 1 ORDER BY StartTime ASC";
+            $sqlActiveShifts = "SELECT Name FROM shifts WHERE IsActive = 1 ORDER BY StartTime ASC";
             $turnosAGenerar = $pdo->query($sqlActiveShifts)->fetchAll(PDO::FETCH_COLUMN);
             
             if (empty($turnosAGenerar)) {
@@ -81,7 +81,7 @@ try {
             
             $tituloConTurno = $tpl['Name'] . ' [' . $nombreTurno . ']';
 
-        $insertActivity = "INSERT INTO Activities (
+        $insertActivity = "INSERT INTO activities (
             Id, Folio, RequesterId, PrimaryDepartmentId, RequesterDepartmentId, Name, 
             SpecificActionPlan, PriorityId, TaskTypeId, StatusId, CommitmentDate
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -113,7 +113,7 @@ try {
             $nextRun->modify('+1 month');
         }
 
-        $updateTpl = "UPDATE ActivityTemplates SET NextRunDate = ? WHERE Id = ?";
+        $updateTpl = "UPDATE activitytemplates SET NextRunDate = ? WHERE Id = ?";
         $pdo->prepare($updateTpl)->execute([$nextRun->format('Y-m-d'), $tpl['Id']]);
         
         echo "   -> Plantilla actualizada para próxima ejecución: {$nextRun->format('Y-m-d')}\n";

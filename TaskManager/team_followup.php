@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_shift'])) {
     $newShiftId = (!empty($_POST['ShiftId']) && $_POST['ShiftId'] !== 'NULL') ? $_POST['ShiftId'] : null;
 
     try {
-        $pdo->prepare("UPDATE Users SET ShiftId = ? WHERE Id = ? AND SupervisorId = ?")
+        $pdo->prepare("UPDATE users SET ShiftId = ? WHERE Id = ? AND SupervisorId = ?")
             ->execute([$newShiftId, $techId, $userId]);
         
         $_SESSION['SuccessMessage'] = "El turno del empleado fue actualizado correctamente.";
@@ -27,12 +27,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_shift'])) {
     }
 }
 
-$turnosDisponibles = $pdo->query("SELECT Id, Name FROM Shifts WHERE IsActive = 1 ORDER BY StartTime")->fetchAll();
+$turnosDisponibles = $pdo->query("SELECT Id, Name FROM shifts WHERE IsActive = 1 ORDER BY StartTime")->fetchAll();
 
 $sqlTechs = "SELECT u.Id, u.FullName, u.JobTitle, u.Email, u.ShiftId, sh.Name as ShiftName
-             FROM Users u 
-             JOIN Roles r ON u.RoleId = r.Id 
-             LEFT JOIN Shifts sh ON u.ShiftId = sh.Id
+             FROM users u 
+             JOIN roles r ON u.RoleId = r.Id 
+             LEFT JOIN shifts sh ON u.ShiftId = sh.Id
              WHERE u.SupervisorId = ? AND u.IsActive = 1
              ORDER BY u.FullName ASC";
 $stmtTechs = $pdo->prepare($sqlTechs);
@@ -43,10 +43,10 @@ $equipo = [];
 
 foreach ($tecnicos as $tech) {
     $sqlTasks = "SELECT a.Id, a.Folio, a.Name, a.ProgressPercentage, s.Name as Estado, p.Name as Prioridad,
-                 (SELECT MAX(CreatedAt) FROM ActivityComments WHERE ActivityId = a.Id) as LastUpdate
-                 FROM Activities a
-                 JOIN Statuses s ON a.StatusId = s.Id
-                 JOIN Priorities p ON a.PriorityId = p.Id
+                 (SELECT MAX(CreatedAt) FROM activitycomments WHERE ActivityId = a.Id) as LastUpdate
+                 FROM activities a
+                 JOIN statuses s ON a.StatusId = s.Id
+                 JOIN priorities p ON a.PriorityId = p.Id
                  WHERE a.ResponsibleId = ? AND s.Name NOT IN ('Finalizado', 'Cancelado')
                  ORDER BY p.Id DESC, a.ProgressPercentage DESC";
     $stmtTasks = $pdo->prepare($sqlTasks);
@@ -54,9 +54,9 @@ foreach ($tecnicos as $tech) {
     $tareasActivas = $stmtTasks->fetchAll();
     
     $sqlHistory = "SELECT a.Id, a.Folio, a.Name, a.CompletedDate, s.Name as Estado, p.Name as Prioridad
-                   FROM Activities a
-                   JOIN Statuses s ON a.StatusId = s.Id
-                   JOIN Priorities p ON a.PriorityId = p.Id
+                   FROM activities a
+                   JOIN statuses s ON a.StatusId = s.Id
+                   JOIN priorities p ON a.PriorityId = p.Id
                    WHERE a.ResponsibleId = ? AND s.Name IN ('Finalizado', 'Cancelado')
                    ORDER BY a.CompletedDate DESC
                    LIMIT 20";

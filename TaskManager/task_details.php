@@ -16,14 +16,14 @@ $sql = "SELECT a.*, p.Name as Prioridad, s.Name as Estado, d.Name as DeptoOrigen
                t.FullName as Tecnico,
                dep.Folio as DepFolio, dep.Name as DepName, dep.ProgressPercentage as DepProgress, 
                dep.StatusId as DepStatusId, dt.FullName as DepTechName
-        FROM Activities a
-        JOIN Priorities p ON a.PriorityId = p.Id
-        JOIN Statuses s ON a.StatusId = s.Id
-        LEFT JOIN Departments d ON a.RequesterDepartmentId = d.Id
-        LEFT JOIN Users u ON a.RequesterId = u.Id
-        LEFT JOIN Users t ON a.ResponsibleId = t.Id
-        LEFT JOIN Activities dep ON a.DependsOnActivityId = dep.Id
-        LEFT JOIN Users dt ON dep.ResponsibleId = dt.Id
+        FROM activities a
+        JOIN priorities p ON a.PriorityId = p.Id
+        JOIN statuses s ON a.StatusId = s.Id
+        LEFT JOIN departments d ON a.RequesterDepartmentId = d.Id
+        LEFT JOIN users u ON a.RequesterId = u.Id
+        LEFT JOIN users t ON a.ResponsibleId = t.Id
+        LEFT JOIN activities dep ON a.DependsOnActivityId = dep.Id
+        LEFT JOIN users dt ON dep.ResponsibleId = dt.Id
         WHERE a.Id = ?";
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$taskId]);
@@ -78,16 +78,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_progress']) &&
             if ($nuevoProgreso == 0) $nuevoStatus = 2; 
             if ($nuevoProgreso == 100) $nuevoStatus = 4; 
 
-            $sqlUpd = "UPDATE Activities SET ProgressPercentage = ?, StatusId = ? WHERE Id = ?";
+            $sqlUpd = "UPDATE activities SET ProgressPercentage = ?, StatusId = ? WHERE Id = ?";
             $pdo->prepare($sqlUpd)->execute([$nuevoProgreso, $nuevoStatus, $taskId]);
 
             $commentId = generar_uuid();
-            $sqlComm = "INSERT INTO ActivityComments (Id, ActivityId, UserId, CommentText, ImagePath) VALUES (?, ?, ?, ?, ?)";
+            $sqlComm = "INSERT INTO activitycomments (Id, ActivityId, UserId, CommentText, ImagePath) VALUES (?, ?, ?, ?, ?)";
             $pdo->prepare($sqlComm)->execute([$commentId, $taskId, $userId, "AVANCE $nuevoProgreso%: " . $comentario, $imagePath]);
 
             if (!empty($task['ProjectId'])) {
-                $pdo->prepare("UPDATE ProjectStages ps SET ProgressPercentage = (SELECT COALESCE(AVG(ProgressPercentage), 0) FROM Activities WHERE StageId = ps.Id AND IsDeleted = 0) WHERE Id = ?")->execute([$task['StageId']]);
-                $pdo->prepare("UPDATE Projects p SET ProgressPercentage = (SELECT COALESCE(AVG(ProgressPercentage), 0) FROM ProjectStages WHERE ProjectId = p.Id AND IsDeleted = 0) WHERE Id = ?")->execute([$task['ProjectId']]);
+                $pdo->prepare("UPDATE projectstages ps SET ProgressPercentage = (SELECT COALESCE(AVG(ProgressPercentage), 0) FROM activities WHERE StageId = ps.Id AND IsDeleted = 0) WHERE Id = ?")->execute([$task['StageId']]);
+                $pdo->prepare("UPDATE projects p SET ProgressPercentage = (SELECT COALESCE(AVG(ProgressPercentage), 0) FROM projectstages WHERE ProjectId = p.Id AND IsDeleted = 0) WHERE Id = ?")->execute([$task['ProjectId']]);
             }
 
             $_SESSION['SuccessMessage'] = "Avance reportado correctamente.";
@@ -101,9 +101,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_progress']) &&
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve_task']) && $roleName === 'Administrativo') {
     try {
-        $pdo->prepare("UPDATE Activities SET StatusId = 5, CompletedDate = NOW() WHERE Id = ?")->execute([$taskId]);
+        $pdo->prepare("UPDATE activities SET StatusId = 5, CompletedDate = NOW() WHERE Id = ?")->execute([$taskId]);
         $commentId = generar_uuid();
-        $pdo->prepare("INSERT INTO ActivityComments (Id, ActivityId, UserId, CommentText) VALUES (?, ?, ?, ?)")
+        $pdo->prepare("INSERT INTO activitycomments (Id, ActivityId, UserId, CommentText) VALUES (?, ?, ?, ?)")
             ->execute([$commentId, $taskId, $userId, "VISTO BUENO: Tarea aprobada y finalizada."]);
 
         $_SESSION['SuccessMessage'] = "La tarea ha sido cerrada.";
@@ -112,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve_task']) && $r
     } catch (Exception $e) { $errores[] = "Error al aprobar."; }
 }
 
-$comments = $pdo->prepare("SELECT c.*, u.FullName, r.Name as RoleName FROM ActivityComments c LEFT JOIN Users u ON c.UserId = u.Id LEFT JOIN Roles r ON u.RoleId = r.Id WHERE c.ActivityId = ? ORDER BY c.CreatedAt DESC");
+$comments = $pdo->prepare("SELECT c.*, u.FullName, r.Name as RoleName FROM activitycomments c LEFT JOIN users u ON c.UserId = u.Id LEFT JOIN roles r ON u.RoleId = r.Id WHERE c.ActivityId = ? ORDER BY c.CreatedAt DESC");
 $comments->execute([$taskId]);
 $historial = $comments->fetchAll();
 

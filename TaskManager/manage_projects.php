@@ -32,11 +32,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_project'])) {
             $newProjectId = generar_uuid();
             $folio = 'PRJ-' . date('ym') . '-' . rand(1000, 9999);
             
-            $sqlProject = "INSERT INTO Projects (Id, Folio, Name, Description, Objective, ExpectedResult, PrimaryDepartmentId, PriorityId, StatusId, StartDate, CommitmentDate) 
+            $sqlProject = "INSERT INTO projects (Id, Folio, Name, Description, Objective, ExpectedResult, PrimaryDepartmentId, PriorityId, StatusId, StartDate, CommitmentDate) 
                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 2, ?, ?)";
             $pdo->prepare($sqlProject)->execute([$newProjectId, $folio, $name, $description, $objective, $expectedResult, $deptoId, $priorityId, $startDate, $commitmentDate]);
 
-            $sqlLeader = "INSERT INTO ProjectLeaders (ProjectId, UserId) VALUES (?, ?)";
+            $sqlLeader = "INSERT INTO projectleaders (ProjectId, UserId) VALUES (?, ?)";
             $pdo->prepare($sqlLeader)->execute([$newProjectId, $userId]);
 
             $pdo->commit();
@@ -50,13 +50,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_project'])) {
     }
 }
 
-$prioridades = $pdo->query("SELECT Id, Name FROM Priorities ORDER BY Id")->fetchAll();
+$prioridades = $pdo->query("SELECT Id, Name FROM priorities ORDER BY Id")->fetchAll();
 
 $sqlProjects = "SELECT p.*, pr.Name as Prioridad, s.Name as Estado,
-                (SELECT COUNT(*) FROM ProjectStages WHERE ProjectId = p.Id) as TotalEtapas
-                FROM Projects p
-                JOIN Priorities pr ON p.PriorityId = pr.Id
-                JOIN Statuses s ON p.StatusId = s.Id
+                (SELECT COUNT(*) FROM projectstages WHERE ProjectId = p.Id) as TotalEtapas
+                FROM projects p
+                JOIN priorities pr ON p.PriorityId = pr.Id
+                JOIN statuses s ON p.StatusId = s.Id
                 WHERE p.PrimaryDepartmentId = ? AND p.IsDeleted = 0
                 ORDER BY p.RowVersion DESC";
 $stmt = $pdo->prepare($sqlProjects);

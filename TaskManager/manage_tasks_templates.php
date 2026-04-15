@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_template'])) {
     } else {
         try {
             $newId = generar_uuid();
-            $sql = "INSERT INTO ActivityTemplates (Id, Name, SpecificActionPlan, PrimaryDepartmentId, PriorityId, RecurrenceType, TargetShifts, NextRunDate, IsActive) 
+            $sql = "INSERT INTO activitytemplates (Id, Name, SpecificActionPlan, PrimaryDepartmentId, PriorityId, RecurrenceType, TargetShifts, NextRunDate, IsActive) 
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)";
             $pdo->prepare($sql)->execute([$newId, $name, $plan, $deptoId, $priorityId, $recurrence, $shifts, $nextRun]);
             $_SESSION['SuccessMessage'] = "Rutina creada.";
@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_template'])) {
         $errores[] = "No puedes dejar campos obligatorios vacíos.";
     } else {
         try {
-            $sqlUpd = "UPDATE ActivityTemplates SET 
+            $sqlUpd = "UPDATE activitytemplates SET 
                        Name = ?, SpecificActionPlan = ?, PriorityId = ?, 
                        RecurrenceType = ?, TargetShifts = ? 
                        WHERE Id = ? AND PrimaryDepartmentId = ?";
@@ -61,30 +61,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_template'])) {
 
 if (isset($_GET['toggle_id'])) {
     try {
-        $pdo->prepare("UPDATE ActivityTemplates SET IsActive = NOT IsActive WHERE Id = ? AND PrimaryDepartmentId = ?")
+        $pdo->prepare("UPDATE activitytemplates SET IsActive = NOT IsActive WHERE Id = ? AND PrimaryDepartmentId = ?")
             ->execute([$_GET['toggle_id'], $deptoId]);
         header("Location: manage_tasks_templates.php");
         exit;
     } catch (Exception $e) { $errores[] = "Error."; }
 }
 
-$prioridades = $pdo->query("SELECT Id, Name FROM Priorities ORDER BY Id")->fetchAll();
-$turnosActivos = $pdo->query("SELECT Name FROM Shifts WHERE IsActive = 1 ORDER BY StartTime")->fetchAll(PDO::FETCH_COLUMN);
+$prioridades = $pdo->query("SELECT Id, Name FROM priorities ORDER BY Id")->fetchAll();
+$turnosActivos = $pdo->query("SELECT Name FROM shifts WHERE IsActive = 1 ORDER BY StartTime")->fetchAll(PDO::FETCH_COLUMN);
 
-$sqlTemplates = "SELECT t.*, p.Name as Prioridad FROM ActivityTemplates t 
-                 JOIN Priorities p ON t.PriorityId = p.Id 
+$sqlTemplates = "SELECT t.*, p.Name as Prioridad FROM activitytemplates t 
+                 JOIN priorities p ON t.PriorityId = p.Id 
                  WHERE t.PrimaryDepartmentId = ? ORDER BY t.IsActive DESC, t.Name ASC";
 $stmt = $pdo->prepare($sqlTemplates);
 $stmt->execute([$deptoId]);
 $plantillas = $stmt->fetchAll();
 
 $sqlHistory = "SELECT a.Id, a.Folio, a.Name, a.CommitmentDate, a.CompletedDate, a.ProgressPercentage, s.Name as Estado, u.FullName as Responsable
-               FROM Activities a
-               JOIN Statuses s ON a.StatusId = s.Id
-               LEFT JOIN Users u ON a.ResponsibleId = u.Id
+               FROM activities a
+               JOIN statuses s ON a.StatusId = s.Id
+               LEFT JOIN users u ON a.ResponsibleId = u.Id
                WHERE a.PrimaryDepartmentId = ? 
                AND a.Name LIKE CONCAT(?, '%') 
-               AND a.TaskTypeId = (SELECT Id FROM TaskTypes WHERE Name = 'Mantenimiento Preventivo' LIMIT 1)
+               AND a.TaskTypeId = (SELECT Id FROM tasktypes WHERE Name = 'Mantenimiento Preventivo' LIMIT 1)
                ORDER BY a.CommitmentDate DESC LIMIT 15";
 $stmtHist = $pdo->prepare($sqlHistory);
 

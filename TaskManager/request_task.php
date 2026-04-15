@@ -9,8 +9,8 @@ if (!isset($_SESSION['UserID'])) {
 
 $errores = [];
 
-$deptos = $pdo->query("SELECT Id, Name FROM Departments WHERE IsDeleted = 0 ORDER BY Name")->fetchAll();
-$prioridades = $pdo->query("SELECT Id, Name FROM Priorities ORDER BY Id")->fetchAll();
+$deptos = $pdo->query("SELECT Id, Name FROM separtments WHERE IsDeleted = 0 ORDER BY Name")->fetchAll();
+$prioridades = $pdo->query("SELECT Id, Name FROM priorities ORDER BY Id")->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['Name'] ?? '');
@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $requesterId = $_SESSION['UserID'];
         $requesterDeptId = $_SESSION['DepartmentID'];
         $statusId = 1;
-        $sql = "INSERT INTO Activities (
+        $sql = "INSERT INTO activities (
                     Id, Folio, RequesterId, RequesterDepartmentId, 
                     PrimaryDepartmentId, Name, SpecificActionPlan, 
                     StatusId, PriorityId, CommitmentDate
@@ -107,7 +107,7 @@ require 'layout.php';
                     <label class="form-label fw-bold">Tipo de Requerimiento</label>
                     <select name="TaskTypeId" class="form-select" required>
                         <?php 
-                        $tipos = $pdo->query("SELECT * FROM TaskTypes")->fetchAll();
+                        $tipos = $pdo->query("SELECT * FROM tasktypes")->fetchAll();
                         foreach($tipos as $tipo): 
                         ?>
                             <option value="<?= $tipo['Id'] ?>" <?= $tipo['Name'] == 'Mantenimiento Correctivo' ? 'selected' : '' ?>>

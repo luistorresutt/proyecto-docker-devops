@@ -12,9 +12,9 @@ $errores = [];
 $usuarioCreado = null;
 $passwordGenerada = null;
 
-$deptos = $pdo->query("SELECT Id, Name FROM Departments WHERE IsDeleted = 0")->fetchAll();
-$roles = $pdo->query("SELECT Id, Name FROM Roles")->fetchAll();
-$turnos = $pdo->query("SELECT Id, Name FROM Shifts WHERE IsActive = 1 ORDER BY StartTime")->fetchAll();
+$deptos = $pdo->query("SELECT Id, Name FROM departments WHERE IsDeleted = 0")->fetchAll();
+$roles = $pdo->query("SELECT Id, Name FROM roles")->fetchAll();
+$turnos = $pdo->query("SELECT Id, Name FROM shifts WHERE IsActive = 1 ORDER BY StartTime")->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fullName = trim($_POST['FullName'] ?? '');
@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $supervisorId = (!empty($_POST['SupervisorId']) && $_POST['SupervisorId'] !== 'NULL') ? $_POST['SupervisorId'] : null;
     $shiftId = (!empty($_POST['ShiftId']) && $_POST['ShiftId'] !== 'NULL') ? $_POST['ShiftId'] : null;
     
-    $stmtRole = $pdo->prepare("SELECT Name FROM Roles WHERE Id = ?");
+    $stmtRole = $pdo->prepare("SELECT Name FROM roles WHERE Id = ?");
     $stmtRole->execute([$roleId]);
     $selectedRoleName = $stmtRole->fetchColumn();
 
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errores[] = "El campo de Puesto es obligatorio.";
     }
 
-    $stmtEmail = $pdo->prepare("SELECT COUNT(*) FROM Users WHERE Email = ?");
+    $stmtEmail = $pdo->prepare("SELECT COUNT(*) FROM users WHERE Email = ?");
     $stmtEmail->execute([$email]);
     if ($stmtEmail->fetchColumn() > 0) {
         $errores[] = "Ya existe un usuario con ese correo.";
@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $hashedPassword = password_hash($defaultPassword, PASSWORD_BCRYPT);
         $newId = generar_uuid(); 
         
-        $sql = "INSERT INTO Users (Id, DepartmentId, RoleId, SupervisorId, ShiftId, JobTitle, FullName, Email, PasswordHash, IsActive) 
+        $sql = "INSERT INTO users (Id, DepartmentId, RoleId, SupervisorId, ShiftId, JobTitle, FullName, Email, PasswordHash, IsActive) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
         $stmt = $pdo->prepare($sql);
         

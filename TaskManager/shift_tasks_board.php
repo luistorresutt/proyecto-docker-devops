@@ -18,13 +18,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['take_task'])) {
     try {
         $pdo->beginTransaction();
 
-        $sqlTake = "UPDATE Activities SET ResponsibleId = ?, StatusId = 3 WHERE Id = ? AND ResponsibleId IS NULL";
+        $sqlTake = "UPDATE activities SET ResponsibleId = ?, StatusId = 3 WHERE Id = ? AND ResponsibleId IS NULL";
         $stmt = $pdo->prepare($sqlTake);
         $stmt->execute([$userId, $taskId]);
 
         if ($stmt->rowCount() > 0) {
             $commentId = generar_uuid();
-            $pdo->prepare("INSERT INTO ActivityComments (Id, ActivityId, UserId, CommentText) VALUES (?, ?, ?, ?)")
+            $pdo->prepare("INSERT INTO activitycomments (Id, ActivityId, UserId, CommentText) VALUES (?, ?, ?, ?)")
                 ->execute([$commentId, $taskId, $userId, "ACCIÓN: El técnico tomó esta tarea desde la Pizarra del Turno."]);
             
             $pdo->commit();
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['take_task'])) {
     }
 }
 
-$sqlCurrentShift = "SELECT Name, StartTime, EndTime FROM Shifts 
+$sqlCurrentShift = "SELECT Name, StartTime, EndTime FROM shifts 
                     WHERE IsActive = 1 
                     AND (
                         (StartTime < EndTime AND CURTIME() BETWEEN StartTime AND EndTime)
@@ -52,9 +52,9 @@ $sqlCurrentShift = "SELECT Name, StartTime, EndTime FROM Shifts
 $turnoActual = $pdo->query($sqlCurrentShift)->fetch();
 
 $sqlTasks = "SELECT a.Id, a.Folio, a.Name, a.RowVersion as CreatedAt, p.Name as Prioridad, d.Name as DeptoSolicitante
-             FROM Activities a
-             JOIN Priorities p ON a.PriorityId = p.Id
-             LEFT JOIN Departments d ON a.RequesterDepartmentId = d.Id
+             FROM activities a
+             JOIN priorities p ON a.PriorityId = p.Id
+             LEFT JOIN departments d ON a.RequesterDepartmentId = d.Id
              WHERE a.PrimaryDepartmentId = ? AND a.ResponsibleId IS NULL AND a.StatusId = 2
              ORDER BY p.Id DESC, a.RowVersion ASC";
 $stmtTasks = $pdo->prepare($sqlTasks);

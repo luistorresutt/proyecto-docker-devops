@@ -22,14 +22,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($errores)) {
-        $stmt = $pdo->prepare("SELECT PasswordHash FROM Users WHERE Id = ? AND IsActive = 1");
+        $stmt = $pdo->prepare("SELECT PasswordHash FROM users WHERE Id = ? AND IsActive = 1");
         $stmt->execute([$userId]);
         $user = $stmt->fetch();
 
         if ($user) {
             if (password_verify($currentPassword, $user['PasswordHash'])) {
                 $newHashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
-                $updateStmt = $pdo->prepare("UPDATE Users SET PasswordHash = ? WHERE Id = ?");
+                $updateStmt = $pdo->prepare("UPDATE users SET PasswordHash = ? WHERE Id = ?");
                 
                 try {
                     $updateStmt->execute([$newHashedPassword, $userId]);

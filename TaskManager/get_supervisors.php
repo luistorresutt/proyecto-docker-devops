@@ -8,8 +8,8 @@ if (isset($_GET['deptId']) && !empty($_GET['deptId'])) {
 
     $stmt = $pdo->prepare("
         SELECT u.Id, u.FullName 
-        FROM Users u 
-        JOIN Roles r ON u.RoleId = r.Id 
+        FROM users u 
+        JOIN roles r ON u.RoleId = r.Id 
         WHERE r.Name = 'Administrativo' AND u.IsActive = 1 AND u.DepartmentId = ?
     ");
     $stmt->execute([$deptId]);

@@ -11,14 +11,14 @@ $userId = $_SESSION['UserID'];
 $deptoId = $_SESSION['DepartmentID'];
 $roleName = $_SESSION['RoleName'];
 
-$stmtDepto = $pdo->prepare("SELECT Name FROM Departments WHERE Id = ?");
+$stmtDepto = $pdo->prepare("SELECT Name FROM departments WHERE Id = ?");
 $stmtDepto->execute([$deptoId]);
 $deptoName = $stmtDepto->fetchColumn() ?: 'Tu Departamento';
 
 $sql = "SELECT u.Id, u.FullName, u.JobTitle, u.SupervisorId, r.Name as RoleName,
                CASE WHEN u.Id = ? THEN 1 ELSE 0 END as IsCurrentUser
-        FROM Users u
-        JOIN Roles r ON u.RoleId = r.Id
+        FROM users u
+        JOIN roles r ON u.RoleId = r.Id
         WHERE u.DepartmentId = ? AND u.IsActive = 1
         ORDER BY r.Id ASC, u.FullName ASC"; 
 

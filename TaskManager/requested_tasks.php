@@ -13,11 +13,11 @@ $sql = "
     SELECT a.Id, a.Folio, a.Name, p.Name as Prioridad, s.Name as Estado, 
            d.Name as DeptoDestino, a.RowVersion as CreatedAt, a.CommitmentDate,
            a.ProgressPercentage,
-           (SELECT CommentText FROM ActivityComments WHERE ActivityId = a.Id ORDER BY CreatedAt DESC LIMIT 1) as UltimoComentario
-    FROM Activities a
-    JOIN Priorities p ON a.PriorityId = p.Id
-    JOIN Statuses s ON a.StatusId = s.Id
-    JOIN Departments d ON a.PrimaryDepartmentId = d.Id
+           (SELECT CommentText FROM activitycomments WHERE ActivityId = a.Id ORDER BY CreatedAt DESC LIMIT 1) as UltimoComentario
+    FROM activities a
+    JOIN priorities p ON a.PriorityId = p.Id
+    JOIN statuses s ON a.StatusId = s.Id
+    JOIN departments d ON a.PrimaryDepartmentId = d.Id
     WHERE a.RequesterId = ?
     ORDER BY a.RowVersion DESC
 ";
