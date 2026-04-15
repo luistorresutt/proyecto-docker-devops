@@ -9,7 +9,7 @@ if (!isset($_SESSION['UserID'])) {
 
 $errores = [];
 
-$deptos = $pdo->query("SELECT Id, Name FROM separtments WHERE IsDeleted = 0 ORDER BY Name")->fetchAll();
+$deptos = $pdo->query("SELECT Id, Name FROM departments WHERE IsDeleted = 0 ORDER BY Name")->fetchAll();
 $prioridades = $pdo->query("SELECT Id, Name FROM priorities ORDER BY Id")->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
