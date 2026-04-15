@@ -47,7 +47,7 @@ try {
         $sqlDistribucion = "
             SELECT COALESCE(tt.Name, 'Sin clasificar') as Tipo, COUNT(a.Id) as Total
             FROM activities a
-            LEFT JOIN taskTypes tt ON a.TaskTypeId = tt.Id
+            LEFT JOIN tasktypes tt ON a.TaskTypeId = tt.Id
             WHERE a.PrimaryDepartmentId = ? AND a.StatusId != 5 AND a.IsDeleted = 0
             GROUP BY tt.Name
         ";
