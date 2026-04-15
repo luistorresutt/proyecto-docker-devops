@@ -173,7 +173,7 @@ $stmtAllAdmins = $pdo->prepare("SELECT u.Id, u.FullName, d.Name as Depto FROM us
 $stmtAllAdmins->execute([$projectId]);
 $jefesDisponibles = $stmtAllAdmins->fetchAll();
 
-$stmtStages = $pdo->prepare("SELECT * FROM Projectstages WHERE ProjectId = ? ORDER BY OrderIndex ASC");
+$stmtStages = $pdo->prepare("SELECT * FROM projectstages WHERE ProjectId = ? ORDER BY OrderIndex ASC");
 $stmtStages->execute([$projectId]);
 $etapas = $stmtStages->fetchAll();
 
